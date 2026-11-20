@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>亿航 EH216-S 全方位安全分析｜飞行汽车技术基础 · 课程作业 2</title>
+<meta name="description" content="杜金颖 · 吉林大学 15230902｜基于系统安全工程方法的亿航 EH216-S 载人 eVTOL 深度安全分析：危险识别、FHA、FTA、STPA、SOTIF、信息安全、安全需求与 GSN 论证。">
+<style>
+:root{
+  --paper:#fbf9f6; --paper-2:#fff; --ink:#181a1f; --ink-2:#3d4452;
+  --muted:#6d7484; --line:#e5dfd4; --line-2:#f0ebe1;
+  --brand:#b4531f; --brand-2:#8a3d14; --teal:#0f6b62; --blue:#1d4ed8;
+  --danger:#a51f1f; --warn:#a16207; --ok:#15803d;
+  --shadow:0 1px 2px rgba(24,26,31,.04), 0 8px 24px -14px rgba(24,26,31,.2);
+  --shadow-lg:0 2px 6px rgba(24,26,31,.05), 0 26px 50px -28px rgba(24,26,31,.28);
+  --max:1080px;
+  --serif:"Source Han Serif SC","Noto Serif SC","Songti SC",Georgia,serif;
+  --sans:"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",-apple-system,"Segoe UI",sans-serif;
+  --mono:"SF Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.9 var(--sans);-webkit-font-smoothing:antialiased}
+img,svg{max-width:100%}
+a{color:var(--brand);text-decoration:none;box-shadow:inset 0 -1px 0 rgba(180,83,31,.3)}
+a:hover{box-shadow:inset 0 -1px 0 var(--brand)}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 26px}
+
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--brand),var(--danger));z-index:99}
+
+.topbar{position:sticky;top:0;z-index:50;backdrop-filter:saturate(1.4) blur(14px);background:rgba(251,249,246,.9);border-bottom:1px solid var(--line)}
+.topbar .in{max-width:var(--max);margin:0 auto;padding:10px 26px;display:flex;align-items:center;gap:16px}
+.brandmark{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--danger));box-shadow:0 0 0 4px rgba(180,83,31,.1)}
+.nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;font-size:13px}
+.nav::-webkit-scrollbar{display:none}
+.nav a{color:var(--ink-2);padding:5px 9px;border-radius:999px;white-space:nowrap;box-shadow:none}
+.nav a:hover{background:#f3ece2;color:var(--ink)}
+@media(max-width:820px){.nav{display:none}}
+
+header.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
+  background:radial-gradient(1000px 420px at 82% -10%, rgba(165,31,31,.10), transparent 60%),
+             radial-gradient(760px 340px at 6% 6%, rgba(180,83,31,.10), transparent 65%), var(--paper)}
+.hero .in{position:relative;max-width:var(--max);margin:0 auto;padding:54px 26px 44px}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--brand);font-weight:600;margin-bottom:18px}
+.eyebrow:before{content:"";width:26px;height:1px;background:var(--brand)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(30px,4.4vw,50px);line-height:1.18;letter-spacing:-.015em;margin:0 0 8px}
+h1 .thin{display:block;font-weight:400;color:var(--ink-2);font-size:.5em;margin-top:14px;line-height:1.5}
+.hero p.dek{font-size:16.5px;color:var(--ink-2);margin:20px 0 0;max-width:62ch}
+.byline{margin-top:24px;display:flex;flex-wrap:wrap;gap:8px 22px;font-size:13.5px;color:var(--muted)}
+.byline b{color:var(--ink);font-weight:600}
+
+.kpiband{border-bottom:1px solid var(--line);background:var(--paper-2)}
+.kpiband .in{max-width:var(--max);margin:0 auto;padding:0 26px;display:grid;grid-template-columns:repeat(5,1fr)}
+@media(max-width:900px){.kpiband .in{grid-template-columns:repeat(2,1fr)}}
+.kpi{padding:20px 14px;border-left:1px solid var(--line-2)}
+.kpi:first-child{border-left:none}
+.kpi .n{font-family:var(--serif);font-size:clamp(22px,2.4vw,30px);font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.kpi .n em{font-style:normal;font-size:.55em;color:var(--muted);font-weight:600;margin-left:2px}
+.kpi .l{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.5}
+.kpi.d .n{color:var(--danger)} .kpi.b .n{color:var(--brand)} .kpi.t .n{color:var(--teal)}
+
+main{padding:60px 0 96px}
+section{margin:0 0 78px;scroll-margin-top:78px}
+.sechead{display:flex;align-items:baseline;gap:18px;border-bottom:2px solid var(--ink);padding-bottom:13px;margin-bottom:28px}
+.secnum{font-family:var(--serif);font-size:clamp(32px,3.8vw,42px);font-weight:700;color:var(--line);line-height:1;flex:none}
+.sechead h2{font-family:var(--serif);font-size:clamp(21px,2.5vw,28px);font-weight:700;margin:0;line-height:1.3}
+.sechead .en{display:block;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.06em;margin-top:5px;text-transform:uppercase}
+
+h3{font-size:16.5px;font-weight:700;margin:34px 0 10px;display:flex;align-items:center;gap:10px}
+h3:before{content:"";width:4px;height:15px;border-radius:2px;background:var(--brand);flex:none}
+p{margin:15px 0;color:var(--ink-2)}
+p.lead{font-size:17.5px;line-height:1.85;color:var(--ink)}
+ul,ol{padding-left:22px;color:var(--ink-2)}
+li{margin:8px 0}
+strong{color:var(--ink);font-weight:700}
+em{font-style:normal;color:var(--brand);font-weight:600}
+
+.pull{border-left:3px solid var(--brand);padding:6px 0 6px 22px;margin:30px 0;font-family:var(--serif);font-size:19.5px;line-height:1.7;color:var(--ink)}
+.pull cite{display:block;font-family:var(--sans);font-size:12.5px;color:var(--muted);font-style:normal;margin-top:10px}
+
+.grid{display:grid;gap:15px;margin:24px 0}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.card{background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:19px 21px;transition:transform .16s ease, box-shadow .16s ease}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.card .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:700;margin-bottom:8px}
+.card h4{margin:0 0 7px;font-size:15px;font-weight:700}
+.card p{margin:0;font-size:13.8px;line-height:1.75;color:var(--muted)}
+
+.note{border-radius:12px;padding:17px 21px;margin:24px 0;font-size:14.3px;line-height:1.8;background:#f5f1e9;border:1px solid var(--line);color:var(--ink-2)}
+.note b{color:var(--ink)}
+.note .lbl{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.1em;padding:2px 8px;border-radius:4px;margin-right:8px;background:var(--ink);color:#fff;vertical-align:1px}
+.note.brand{border-color:rgba(180,83,31,.24);background:linear-gradient(180deg,rgba(180,83,31,.06),rgba(180,83,31,.02))}
+.note.brand .lbl{background:var(--brand)}
+.note.danger{border-color:rgba(165,31,31,.24);background:linear-gradient(180deg,rgba(165,31,31,.06),rgba(165,31,31,.02))}
+.note.danger .lbl{background:var(--danger)}
+.note.warn{border-color:rgba(161,98,7,.26);background:linear-gradient(180deg,rgba(161,98,7,.07),rgba(161,98,7,.02))}
+.note.warn .lbl{background:var(--warn)}
+
+.tw{overflow-x:auto;margin:24px 0;border:1px solid var(--line);border-radius:14px;background:var(--paper-2)}
+table{border-collapse:collapse;width:100%;font-size:13.8px;min-width:620px}
+thead th{background:#f7f3ec;text-align:left;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--line-2);vertical-align:top;color:var(--ink-2)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:nth-child(even){background:#fdfbf7}
+tbody tr:hover{background:#fbf6ee}
+td.b{color:var(--ink);font-weight:600}
+td.num{font-family:var(--mono);font-size:13px;white-space:nowrap}
+.tw .src{font-size:12.3px;color:var(--muted);padding:10px 14px;border-top:1px solid var(--line-2);background:#fdfbf7}
+.sev{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:4px;white-space:nowrap}
+.sev.a{background:rgba(165,31,31,.12);color:var(--danger)}   /* 灾难/危险 */
+.sev.b{background:rgba(161,98,7,.14);color:var(--warn)}       /* 较大 */
+.sev.c{background:rgba(29,78,216,.12);color:var(--blue)}      /* 较小 */
+.sev.d{background:rgba(21,128,61,.12);color:var(--ok)}        /* 可忽略 */
+
+figure{margin:28px 0;background:var(--paper-2);border:1px solid var(--line);border-radius:16px;padding:20px 20px 14px;box-shadow:var(--shadow)}
+figcaption{font-size:12.6px;color:var(--muted);margin-top:12px;line-height:1.7}
+figcaption b{color:var(--ink)}
+
+.bar-row{display:grid;grid-template-columns:110px 1fr 60px;align-items:center;gap:12px;margin:9px 0;font-size:13.2px}
+.bar-row .lb{text-align:right;color:var(--ink-2);white-space:nowrap}
+.bar-row .track{height:20px;background:#f2ece1;border-radius:5px;overflow:hidden}
+.bar-row .fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--danger),#d4574f)}
+.bar-row .fill.b{background:linear-gradient(90deg,var(--brand),#d98a52)}
+.bar-row .fill.t{background:linear-gradient(90deg,var(--teal),#3aa79c)}
+.bar-row .v{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+@media(max-width:600px){.bar-row{grid-template-columns:80px 1fr 54px;font-size:12px}}
+
+ol.refs{font-size:13.5px;color:var(--ink-2);padding-left:26px}
+ol.refs li{margin:9px 0;line-height:1.7;word-break:break-word}
+
+footer{border-top:1px solid var(--line);background:var(--paper-2);padding:38px 0 58px;color:var(--muted);font-size:13.2px}
+footer .in{max-width:var(--max);margin:0 auto;padding:0 26px;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
+footer .who{font-family:var(--serif);font-size:16.5px;color:var(--ink);font-weight:700}
+
+.totop{position:fixed;right:20px;bottom:20px;width:42px;height:42px;border-radius:50%;background:var(--paper-2);border:1px solid var(--line);box-shadow:var(--shadow);display:grid;place-items:center;color:var(--ink-2);z-index:60}
+.totop:hover{color:var(--brand)}
+
+.sidebar{display:none}
+@media(min-width:1240px){
+  .sidebar{display:block;position:fixed;top:86px;right:16px;width:190px;max-height:calc(100vh - 126px);overflow-y:auto;z-index:40;
+    font-size:12.3px;line-height:1.5;padding:8px 6px 10px;border-radius:14px;
+    background:linear-gradient(180deg,rgba(251,249,246,.94),rgba(251,249,246,.8));backdrop-filter:blur(6px);box-shadow:var(--shadow)}
+  .sidebar .st{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#a9a294;margin:0 0 7px 12px}
+  .sidebar a{display:flex;gap:8px;align-items:baseline;padding:4px 10px 4px 12px;border-radius:7px;color:var(--muted);box-shadow:none;border-left:2px solid transparent}
+  .sidebar a:hover{background:#f3ece2;color:var(--ink)}
+  .sidebar a .n{font-family:var(--mono);font-size:10px;color:#bdb6a8;min-width:15px}
+  .sidebar a.on{color:var(--brand);background:rgba(180,83,31,.07);border-left-color:var(--brand);font-weight:700}
+  .sidebar a.on .n{color:var(--brand)}
+  .topbar .nav{display:none}
+}
+@media print{#progress,.topbar,.totop,.sidebar{display:none} body{background:#fff}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<div class="topbar">
+  <div class="in">
+    <div class="brandmark"><span class="dot"></span> EH216-S 安全分析</div>
+    <nav class="nav">
+      <a href="#summary">摘要</a><a href="#scope">对象</a><a href="#method">方法</a><a href="#hazard">危险</a>
+      <a href="#fha">FHA</a><a href="#fta">FTA</a><a href="#stpa">STPA</a><a href="#sotif">SOTIF</a>
+      <a href="#cyber">信息安全</a><a href="#passive">被动安全</a><a href="#ops">运行安全</a>
+      <a href="#req">安全需求</a><a href="#gsn">论证</a><a href="#gaps">缺口</a><a href="#refs">文献</a>
+    </nav>
+  </div>
+</div>
+
+<aside class="sidebar" aria-label="章节导航">
+  <div class="st">目录 · Contents</div>
+  <a href="#summary"><span class="n">00</span>摘要</a>
+  <a href="#scope"><span class="n">01</span>对象与边界</a>
+  <a href="#method"><span class="n">02</span>方法论</a>
+  <a href="#hazard"><span class="n">03</span>危险识别</a>
+  <a href="#fha"><span class="n">04</span>FHA</a>
+  <a href="#fta"><span class="n">05</span>FTA</a>
+  <a href="#stpa"><span class="n">06</span>STPA</a>
+  <a href="#sotif"><span class="n">07</span>SOTIF</a>
+  <a href="#cyber"><span class="n">08</span>信息安全</a>
+  <a href="#passive"><span class="n">09</span>被动安全</a>
+  <a href="#ops"><span class="n">10</span>运行安全</a>
+  <a href="#req"><span class="n">11</span>安全需求</a>
+  <a href="#gsn"><span class="n">12</span>GSN 论证</a>
+  <a href="#gaps"><span class="n">13</span>缺口</a>
+  <a href="#concl"><span class="n">14</span>结论</a>
+  <a href="#refs"><span class="n">15</span>文献</a>
+</aside>
+
+<header class="hero">
+  <div class="in">
+    <div class="eyebrow">飞行汽车技术基础 · 课程作业 2 · 全方位安全分析</div>
+    <h1>亿航 EH216-S 载人 eVTOL<br><span class="thin">基于系统安全工程的深度安全分析：危险识别、失效机理与安全论证</span></h1>
+    <p class="dek">四证集齐解决的是“能不能合法飞”，安全分析要回答的是“凭什么相信它在失效时仍然安全”。这篇分析把课程的系统安全工程方法（HARA / FHA / FTA / STPA / SOTIF / TARA / GSN）逐条落到一个真实产品上，并在每一步标注哪些结论有证据、哪些只是设计意图。</p>
+    <div class="byline">
+      <span><b>杜金颖</b>　吉林大学</span><span>/</span>
+      <span>学号 <b>15230902</b></span><span>/</span>
+      <span>证据截止 <b>2026-11-20</b></span><span>/</span>
+      <span>对象 <b>亿航 EH216-S</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="kpiband">
+  <div class="in">
+    <div class="kpi d"><div class="n">9<em>类</em></div><div class="l">识别出的主要危险类别</div></div>
+    <div class="kpi b"><div class="n">32<em>项</em></div><div class="l">FHA 危险清单条目（本文）</div></div>
+    <div class="kpi"><div class="n">18<em>条</em></div><div class="l">可追溯安全需求 SR</div></div>
+    <div class="kpi t"><div class="n">4<em>层</em></div><div class="l">安全论证深度：车/机/系统/证据</div></div>
+    <div class="kpi"><div class="n">3<em>类</em></div><div class="l">无法判定的关键绩效数据</div></div>
+  </div>
+</div>
+
+<main class="wrap">
+
+<!-- ============ 摘要 ============ -->
+<section id="summary">
+  <div class="sechead"><div class="secnum">00</div><h2>摘要<span class="en">Executive Summary</span></h2></div>
+
+  <p class="lead">EH216-S 的安全性不是“通过适航 = 安全”，而是由四层证据叠起来的：<strong>设计层的冗余与隔离</strong>、<strong>分析层的危害与失效推演</strong>、<strong>验证层的试验与试飞</strong>、<strong>运行层的限制与隔离区</strong>。本文按课程的系统安全工程链条逐层拆解，结论可以一句话概括——</p>
+
+  <div class="pull">
+    它在“设计冗余”和“制度合规”两层做得比同类产品扎实；在“失效定量论证”和“运行绩效数据”两层存在明显证据缺口，且这两层恰恰是载人航空安全论证的核心。
+    <cite>—— 本文安全结论（证据分级见 01 章）</cite>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <div class="k">设计层</div>
+      <h4>冗余与隔离：多套飞控 + 投票 + Fail-Safe</h4>
+      <p>官方披露的关键词是“多套飞控及投票机制”“双路通信与独立密钥”“Fail-Safe 就近降落”。从安全架构角度，这是典型的<b>故障-安全（fail-safe）</b>而非<b>故障-容错运行（fail-operational）</b>设计：一旦超出降级包线，策略是尽快落地，而不是继续任务。</p>
+    </div>
+    <div class="card">
+      <div class="k">分析层</div>
+      <h4>本文完成的推演：FHA 32 项、FTA 1 棵、STPA 12 条 UCA</h4>
+      <p>用课程方法对“坠撞/失控/热失控/人员伤害”四类顶事件做定性推演。结果显示：<b>共模失效</b>（同批传感器、同源时钟、共享电源）与<b>地面人员闯入</b>是两条最容易被演示视频掩盖的风险链。</p>
+    </div>
+    <div class="card">
+      <div class="k">运行层</div>
+      <h4>用运行限制替代部分安全证据</h4>
+      <p>TCDS 第一阶段限制（目视范围内、视距外增观测员、暂不在水上运行）本质上是用<b>运行约束</b>换取安全裕度——这是合理的工程妥协，但也说明系统尚未具备在开放空域自主应对风险的能力。</p>
+    </div>
+    <div class="card">
+      <div class="k">缺口</div>
+      <h4>三项无法判定的关键数据</h4>
+      <p>① 累计运行小时与事故率；② 电池热失控的实测概率与抑制验证；③ 飞控共模失效的定量分析（FTA 定量化所需的失效率数据）。缺这三项，任何“与民航同等级安全”的说法都无法成立。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 对象 ============ -->
+<section id="scope">
+  <div class="sechead"><div class="secnum">01</div><h2>分析对象与证据边界<span class="en">Scope and Evidence Boundary</span></h2></div>
+
+  <p>对象沿用上一篇：<strong>亿航智能 EH216-S 无人驾驶载人航空器系统</strong>及其运营主体（广东亿航通用航空、合肥合翼航空）。分析范围覆盖：航空器本体（动力、飞控、能源、结构、乘员舱）、地面调度系统、运行环境（起降场地、空域、人员）。</p>
+
+  <h3>1.1 证据分级（与作业 1 一致，便于交叉引用）</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>等级</th><th>来源</th><th>在安全分析中的作用</th><th>局限</th></tr></thead>
+      <tbody>
+        <tr><td class="b">A 官方披露</td><td>亿航官网、产品页、适航专题页</td><td>确认设计特征（冗余、Fail-Safe、双路通信）</td><td>只证明“声称采用”，不证明“失效时有效”</td></tr>
+        <tr><td class="b">B 监管文件</td><td>专用条件、TC/AC/PC/OC、TCDS 运行限制</td><td>确认安全目标的制度边界与运行约束</td><td>专用条件文本未公开全文，条款细节不可见</td></tr>
+        <tr><td class="b">C 公开报道</td><td>权威媒体、财报</td><td>交叉核验取证节点与运营事实</td><td>不含技术安全数据</td></tr>
+        <tr><td class="b">D 本文推演</td><td>按课程方法所做的 FHA/FTA/STPA</td><td>揭示风险链与需求缺口</td><td>定性推演，不替代官方安全评估</td></tr>
+      </tbody>
+    </table>
+    <div class="src">本文所有 D 级推演均标注为“本文”，不与 A/B 级证据混用。</div>
+  </div>
+
+  <div class="note danger"><span class="lbl">边界</span><b>本分析不能证明 EH216-S 不安全，也不能证明它安全。</b>它做的是：指出“要证明它安全，必须完成哪些论证”，以及“这些论证中有多少已有公开证据”。这是安全分析的正确用法——<b>安全不是结论，是可审计的论证过程</b>。</div>
+</section>
+
+<!-- ============ 方法 ============ -->
+<section id="method">
+  <div class="sechead"><div class="secnum">02</div><h2>方法论：课程的系统安全工程链条<span class="en">Method: Systems Safety Engineering</span></h2></div>
+
+  <p>课程把安全工程拆成“系统工程 → 安全分析 → 安全需求 → 安全措施 → 安全论证”五步，并要求按 <strong>Vehicle / System / HW / SW</strong> 四级展开。本文据此建立分析链：</p>
+
+  <figure>
+    <svg viewBox="0 0 920 300" role="img" aria-label="系统安全工程分析链条">
+      <defs>
+        <marker id="ar2" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#b4531f"/></marker>
+        <style>
+          .b1{fill:#fff;stroke:#d9d1c2;stroke-width:1.3;rx:11}
+          .t1{font:12.5px "PingFang SC",sans-serif;fill:#181a1f;text-anchor:middle;font-weight:600}
+          .t2{font:10.5px "PingFang SC",sans-serif;fill:#6d7484;text-anchor:middle}
+          .cap{font:11px "PingFang SC",sans-serif;fill:#b4531f;text-anchor:middle;letter-spacing:1.5px;font-weight:700}
+          .ln{stroke:#b4531f;stroke-width:1.4;fill:none;marker-end:url(#ar2);opacity:.75}
+        </style>
+      </defs>
+      <text x="460" y="22" class="cap">SAFETY ENGINEERING CHAIN · 五步闭环</text>
+
+      <rect class="b1" x="18" y="52" width="160" height="86"/>
+      <text x="98" y="78" class="t1">① 系统工程</text><text x="98" y="98" class="t2">边界 · 场景 · 利益相关</text><text x="98" y="116" class="t2">ISO/IEC/IEEE 15288</text>
+
+      <rect class="b1" x="198" y="52" width="160" height="86"/>
+      <text x="278" y="78" class="t1">② 安全分析</text><text x="278" y="98" class="t2">HARA·HAZOP·FMEA</text><text x="278" y="116" class="t2">FTA·STPA·TARA</text>
+
+      <rect class="b1" x="378" y="52" width="160" height="86"/>
+      <text x="458" y="78" class="t1">③ 安全需求</text><text x="458" y="98" class="t2">FuSa·SOTIF</text><text x="458" y="116" class="t2">Passive·Security·Behavior</text>
+
+      <rect class="b1" x="558" y="52" width="160" height="86"/>
+      <text x="638" y="78" class="t1">④ 安全措施</text><text x="638" y="98" class="t2">设计·实现·V&amp;V</text><text x="638" y="116" class="t2">试验 · 仿真 · 审查</text>
+
+      <rect class="b1" x="738" y="52" width="164" height="86"/>
+      <text x="820" y="78" class="t1">⑤ 安全论证</text><text x="820" y="98" class="t2">GSN · SACM</text><text x="820" y="116" class="t2">目标—策略—证据</text>
+
+      <path class="ln" d="M178 95 L198 95"/><path class="ln" d="M358 95 L378 95"/>
+      <path class="ln" d="M538 95 L558 95"/><path class="ln" d="M718 95 L738 95"/>
+      <path class="ln" d="M820 138 L820 168 L278 168 L278 138" stroke-dasharray="5 4"/>
+
+      <rect class="b1" x="18" y="196" width="884" height="76" fill="#fdfbf7"/>
+      <text x="460" y="222" class="t1">四级展开：Vehicle 整机 → System 系统 → HW 硬件 → SW 软件</text>
+      <text x="460" y="246" class="t2">每一级都必须有独立的危险分析、需求分解与验证证据；上层结论不能替代下层证据</text>
+    </svg>
+    <figcaption><b>图 1</b>　本文采用的分析链。课程强调“安全需求必须可追溯到危险”，因此本文的每条 SR 都标注了来源危险编号。</figcaption>
+  </figure>
+
+  <h3>2.1 六类安全在一个产品上的分工</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>安全类型</th><th>回答什么问题</th><th>本文对应章节</th></tr></thead>
+      <tbody>
+        <tr><td class="b">功能安全 FuSa</td><td>系统故障时是否进入安全状态（ISO 26262 思路）</td><td>05 FTA、11 需求</td></tr>
+        <tr><td class="b">预期功能安全 SOTIF</td><td>没有故障、但功能不足/误用时是否安全（ISO 21448）</td><td>07 SOTIF</td></tr>
+        <tr><td class="b">被动安全 Passive</td><td>事故不可避免时，乘员与第三方的伤害是否可控</td><td>09 被动安全</td></tr>
+        <tr><td class="b">信息安全 Security</td><td>恶意攻击能否改变飞行状态（ISO 21434 思路）</td><td>08 信息安全</td></tr>
+        <tr><td class="b">多智能体安全</td><td>集群调度中，机与机、机与地面之间是否冲突</td><td>06 STPA</td></tr>
+        <tr><td class="b">运行安全</td><td>人、场地、气象、空域的组织性风险</td><td>10 运行安全</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 危险识别 ============ -->
+<section id="hazard">
+  <div class="sechead"><div class="secnum">03</div><h2>危险识别：九类风险源<span class="en">Hazard Identification</span></h2></div>
+
+  <p>按 HAZOP 的“偏离”思路，从 EH216-S 的实际构型（多旋翼、纯电、无驾驶员、2 座、30 km 航程）出发，识别出九类风险源。这是后续 FHA/FTA/STPA 的输入。</p>
+
+  <div class="grid g3">
+    <div class="card"><div class="k">H1 · 动力</div><h4>推力丧失 / 不对称</h4><p>单桨、单电机或单臂失效；共轴双桨上下桨干扰导致推力偏差。</p></div>
+    <div class="card"><div class="k">H2 · 能源</div><h4>电池热失控 / 骤降</h4><p>高倍率放电、快充、低温、碰撞后内短路引发热失控；SOC 估计错误导致提前耗尽。</p></div>
+    <div class="card"><div class="k">H3 · 控制</div><h4>飞控共模失效</h4><p>多套飞控若共享电源/时钟/传感器批次，冗余退化为单点。</p></div>
+    <div class="card"><div class="k">H4 · 导航</div><h4>GNSS 欺骗 / 多径</h4><p>城市峡谷多径、欺骗攻击导致航迹偏移或悬停漂移。</p></div>
+    <div class="card"><div class="k">H5 · 通信</div><h4>链路中断 / 注入</h4><p>指令被篡改、密钥泄露、地面站失联后的策略不确定。</p></div>
+    <div class="card"><div class="k">H6 · 结构</div><h4>复材损伤 / 疲劳</h4><p>碳纤维机臂受冲击后分层，目视检查难以发现。</p></div>
+    <div class="card"><div class="k">H7 · 人员</div><h4>地面闯入 / 装载错误</h4><p>起降区人员进入、乘客未系约束、重心/载重超限。</p></div>
+    <div class="card"><div class="k">H8 · 环境</div><h4>阵风 / 低温 / 降水</h4><p>超出设计包线的气象条件；低温导致可用容量骤降。</p></div>
+    <div class="card"><div class="k">H9 · 组织</div><h4>运行程序缺陷</h4><p>观测员缺位、气象窗口判断失误、应急响应不及时。</p></div>
+  </div>
+
+  <div class="note warn"><span class="lbl">观察</span>这九类里，<b>H1/H2/H3 属于“设计能用分析证明”的范畴</b>（有成熟方法：FTA、FMEA、热失控试验），而 <b>H7/H8/H9 属于“必须靠运行数据才能证明”的范畴</b>。公开资料对前者有较多披露，对后者几乎为零——这是后文“证据缺口”的来源。</div>
+</section>
+
+<!-- ============ FHA ============ -->
+<section id="fha">
+  <div class="sechead"><div class="secnum">04</div><h2>功能危险分析 FHA：32 项危险的严重度分级<span class="en">Functional Hazard Assessment</span></h2></div>
+
+  <p>FHA 的核心是把“功能失效”翻译成“后果等级”。参照航空常用的五级严重度（灾难性 / 危险 / 较大 / 较小 / 无影响），对 EH216-S 的主要功能逐项评估。下表为节选（完整 32 项见文末附录说明）。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>编号</th><th>功能</th><th>失效状态</th><th>后果</th><th>严重度</th><th>可接受概率量级</th></tr></thead>
+      <tbody>
+        <tr><td class="num">F-01</td><td>产生升力</td><td>多桨同时失效</td><td>失控坠地，乘员死亡</td><td><span class="sev a">灾难性</span></td><td class="num">&lt;10⁻⁹ /h</td></tr>
+        <tr><td class="num">F-02</td><td>姿态控制</td><td>飞控输出错误且未隔离</td><td>不可控滚转</td><td><span class="sev a">灾难性</span></td><td class="num">&lt;10⁻⁹ /h</td></tr>
+        <tr><td class="num">F-03</td><td>能源供给</td><td>电池热失控</td><td>起火/迫降，乘员伤亡</td><td><span class="sev a">灾难性</span></td><td class="num">&lt;10⁻⁹ /h</td></tr>
+        <tr><td class="num">F-04</td><td>航迹保持</td><td>GNSS 丢失/欺骗</td><td>偏离航线、进入禁飞区</td><td><span class="sev b">危险</span></td><td class="num">&lt;10⁻⁷ /h</td></tr>
+        <tr><td class="num">F-05</td><td>与地面通信</td><td>链路中断</td><td>无法远程干预，依赖自主策略</td><td><span class="sev b">危险</span></td><td class="num">&lt;10⁻⁷ /h</td></tr>
+        <tr><td class="num">F-06</td><td>应急降落</td><td>就近降落点不可用</td><td>迫降于非预期区域</td><td><span class="sev b">危险</span></td><td class="num">&lt;10⁻⁷ /h</td></tr>
+        <tr><td class="num">F-07</td><td>乘员约束</td><td>约束失效</td><td>颠簸/迫降中二次伤害</td><td><span class="sev c">较大</span></td><td class="num">&lt;10⁻⁵ /h</td></tr>
+        <tr><td class="num">F-08</td><td>地面隔离</td><td>人员进入起降区</td><td>第三方伤害</td><td><span class="sev a">灾难性</span></td><td class="num">&lt;10⁻⁹ /h</td></tr>
+        <tr><td class="num">F-09</td><td>载荷管理</td><td>超载/重心越界</td><td>操纵性下降、航程不足</td><td><span class="sev c">较大</span></td><td class="num">&lt;10⁻⁵ /h</td></tr>
+        <tr><td class="num">F-10</td><td>结构完整</td><td>复材分层未检出</td><td>空中结构失效</td><td><span class="sev a">灾难性</span></td><td class="num">&lt;10⁻⁹ /h</td></tr>
+      </tbody>
+    </table>
+    <div class="src">严重度分级参照航空惯例；概率量级为行业通用目标值，非 EH216-S 实测值（本文推演）。</div>
+  </div>
+
+  <div class="note danger"><span class="lbl">关键</span>FHA 里最刺眼的一条是 <b>F-08 地面隔离</b>：对无驾驶员的载人平台，第三方风险与乘员风险同等重要——因为事故发生时，地面上的人没有任何防护。而这一条恰恰最依赖“运行程序”，不是靠机上冗余能解决的。</div>
+</section>
+
+<!-- ============ FTA ============ -->
+<section id="fta">
+  <div class="sechead"><div class="secnum">05</div><h2>失效树分析 FTA：以“失控坠撞”为顶事件<span class="en">Fault Tree Analysis</span></h2></div>
+
+  <p>选定顶事件 <strong>“飞行中失控并坠撞”</strong>，向下展开到可判定的底事件。树形结构本身比结论更重要：它把“冗余设计到底防住了什么”可视化。</p>
+
+  <figure>
+    <svg viewBox="0 0 920 520" role="img" aria-label="失控坠撞失效树">
+      <defs>
+        <marker id="ar3" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#8a8378"/></marker>
+        <style>
+          .ev{fill:#fff;stroke:#c9c1b1;stroke-width:1.3;rx:8}
+          .g1{fill:#fdf3ef;stroke:#c1795a;stroke-width:1.4;rx:8}
+          .g2{fill:#f4f7fb;stroke:#7c93b5;stroke-width:1.3;rx:8}
+          .bt{fill:#fff8f6;stroke:#a51f1f;stroke-width:1.5;rx:8}
+          .tx{font:11.5px "PingFang SC",sans-serif;fill:#181a1f;text-anchor:middle}
+          .ty{font:10px "PingFang SC",sans-serif;fill:#6d7484;text-anchor:middle}
+          .ln{stroke:#8a8378;stroke-width:1.2;fill:none;marker-end:url(#ar3)}
+          .gt{font:10px "PingFang SC",sans-serif;fill:#a51f1f;text-anchor:middle;font-weight:700}
+        </style>
+      </defs>
+
+      <rect class="bt" x="330" y="18" width="260" height="46"/>
+      <text x="460" y="38" class="tx">顶事件：飞行中失控并坠撞</text>
+      <text x="460" y="54" class="ty">TOP EVENT · Catastrophic</text>
+
+      <!-- 第一层：或门 -->
+      <rect class="g1" x="410" y="92" width="100" height="30"/>
+      <text x="460" y="112" class="gt">OR 或门</text>
+      <path class="ln" d="M460 64 L460 92"/>
+
+      <!-- 第二层三个中间事件 -->
+      <rect class="ev" x="40" y="146" width="230" height="44"/>
+      <text x="155" y="166" class="tx">推力/姿态控制失效</text>
+      <text x="155" y="181" class="ty">Loss of control authority</text>
+
+      <rect class="ev" x="330" y="146" width="230" height="44"/>
+      <text x="445" y="166" class="tx">能源系统失效</text>
+      <text x="445" y="181" class="ty">Loss of power</text>
+
+      <rect class="ev" x="620" y="146" width="230" height="44"/>
+      <text x="735" y="166" class="tx">结构/导航严重失效</text>
+      <text x="735" y="181" class="ty">Structural / navigation</text>
+
+      <path class="ln" d="M460 122 L460 134 L155 134 L155 146"/>
+      <path class="ln" d="M460 122 L460 146"/>
+      <path class="ln" d="M460 122 L460 134 L735 134 L735 146"/>
+
+      <!-- 左支 -->
+      <rect class="g2" x="16" y="222" width="128" height="46"/>
+      <text x="80" y="242" class="tx">多桨失效</text><text x="80" y="257" class="ty">共轴桨同时失效</text>
+      <rect class="g2" x="156" y="222" width="128" height="46"/>
+      <text x="220" y="242" class="tx">飞控输出错误</text><text x="220" y="257" class="ty">表决未隔离</text>
+      <rect class="g2" x="16" y="292" width="268" height="46"/>
+      <text x="150" y="312" class="tx">共模失效：共享电源 / 时钟 / 同批传感器</text>
+      <text x="150" y="327" class="ty">COMMON CAUSE — 冗余退化为单点</text>
+
+      <path class="ln" d="M155 190 L155 200 L80 200 L80 222"/>
+      <path class="ln" d="M155 190 L155 200 L220 200 L220 222"/>
+      <path class="ln" d="M220 268 L220 292"/>
+
+      <!-- 中支 -->
+      <rect class="g2" x="330" y="222" width="230" height="46"/>
+      <text x="445" y="242" class="tx">电池热失控</text><text x="445" y="257" class="ty">内短路 / 过充 / 碰撞</text>
+      <rect class="g2" x="330" y="292" width="230" height="46"/>
+      <text x="445" y="312" class="tx">SOC 估计错误导致提前耗尽</text>
+      <text x="445" y="327" class="ty">Estimation error</text>
+      <path class="ln" d="M445 190 L445 222"/><path class="ln" d="M445 268 L445 292"/>
+
+      <!-- 右支 -->
+      <rect class="g2" x="600" y="222" width="130" height="46"/>
+      <text x="665" y="242" class="tx">复材分层</text><text x="665" y="257" class="ty">冲击后未检出</text>
+      <rect class="g2" x="744" y="222" width="130" height="46"/>
+      <text x="809" y="242" class="tx">GNSS 欺骗</text><text x="809" y="257" class="ty">航迹偏移</text>
+      <path class="ln" d="M735 190 L735 200 L665 200 L665 222"/>
+      <path class="ln" d="M735 190 L735 200 L809 200 L809 222"/>
+
+      <!-- 结论条 -->
+      <rect class="g2" x="16" y="378" width="858" height="106" fill="#fbf9f5"/>
+      <text x="445" y="402" class="tx">本文判断：三条链中最需要公开证据的是“共模失效”</text>
+      <text x="445" y="424" class="ty">① 多套飞控如果来自同批器件、共享同一电源域，则冗余的定量失效率不成立</text>
+      <text x="445" y="444" class="ty">② 电池热失控在 620 kg 级多旋翼上的抑制设计（隔离、泄压、灭火）公开材料未披露</text>
+      <text x="445" y="464" class="ty">③ 复材结构的分层检出依赖定期无损检测，而运行维护规程未公开</text>
+    </svg>
+    <figcaption><b>图 2</b>　“失控坠撞”失效树（本文推演）。定性展开可行，<b>定量化不可行</b>——因为公开资料缺少底事件失效率与共模因子 β，这正是后文判定“无法完成定量安全论证”的依据。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ STPA ============ -->
+<section id="stpa">
+  <div class="sechead"><div class="secnum">06</div><h2>STPA：控制结构中的不安全控制行为<span class="en">STPA — Unsafe Control Actions</span></h2></div>
+
+  <p>FTA 看“部件怎么坏”，STPA 看“控制逻辑怎么错”。对无驾驶员平台尤其重要：<strong>没有飞行员意味着没有人能在异常时推翻系统的错误决策</strong>。</p>
+
+  <figure>
+    <svg viewBox="0 0 900 330" role="img" aria-label="STPA 控制结构">
+      <defs>
+        <marker id="ar4" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#7c93b5"/></marker>
+        <style>
+          .sb{fill:#fff;stroke:#cfc7b7;stroke-width:1.3;rx:9}
+          .ct{font:12px "PingFang SC",sans-serif;fill:#181a1f;text-anchor:middle;font-weight:600}
+          .st2{font:10px "PingFang SC",sans-serif;fill:#6d7484;text-anchor:middle}
+          .fl{stroke:#7c93b5;stroke-width:1.3;fill:none;marker-end:url(#ar4)}
+          .fb{stroke:#b4531f;stroke-width:1.3;fill:none;marker-end:url(#ar4);stroke-dasharray:5 4}
+          .lab{font:10px "PingFang SC",sans-serif;fill:#7c93b5}
+          .labr{font:10px "PingFang SC",sans-serif;fill:#b4531f}
+        </style>
+      </defs>
+
+      <rect class="sb" x="40" y="40" width="200" height="64"/>
+      <text x="140" y="66" class="ct">地面调度 / 任务计划</text><text x="140" y="86" class="st2">航线 · 起降点 · 气象窗口</text>
+
+      <rect class="sb" x="350" y="40" width="200" height="64"/>
+      <text x="450" y="66" class="ct">机载飞控（控制器）</text><text x="450" y="86" class="st2">制导 · 导航 · 控制律</text>
+
+      <rect class="sb" x="660" y="40" width="200" height="64"/>
+      <text x="760" y="66" class="ct">执行机构</text><text x="760" y="86" class="st2">电机 · 桨 · 舵面（无）</text>
+
+      <rect class="sb" x="660" y="200" width="200" height="64"/>
+      <text x="760" y="226" class="ct">被控过程</text><text x="760" y="246" class="st2">航空器姿态 / 位置</text>
+
+      <rect class="sb" x="350" y="200" width="200" height="64"/>
+      <text x="450" y="226" class="ct">传感器</text><text x="450" y="246" class="st2">IMU · GNSS · 气压 · 视觉</text>
+
+      <rect class="sb" x="40" y="200" width="200" height="64"/>
+      <text x="140" y="226" class="ct">乘员 / 地面人员</text><text x="140" y="246" class="st2">不可控因素 · 闯入风险</text>
+
+      <path class="fl" d="M240 72 L350 72"/><text x="295" y="64" class="lab">任务指令</text>
+      <path class="fl" d="M550 72 L660 72"/><text x="605" y="64" class="lab">控制指令</text>
+      <path class="fl" d="M760 104 L760 200"/><text x="770" y="156" class="lab">推力/力矩</text>
+      <path class="fl" d="M660 232 L550 232"/><text x="605" y="224" class="lab">测量</text>
+      <path class="fb" d="M350 232 L240 232"/><text x="295" y="224" class="labr">观测/告警</text>
+      <path class="fb" d="M450 200 L450 104" stroke-dasharray="5 4"/><text x="460" y="158" class="labr">反馈</text>
+      <path class="fb" d="M140 200 L140 104"/><text x="150" y="158" class="labr">人工干预（有限）</text>
+    </svg>
+    <figcaption><b>图 3</b>　EH216-S 简化控制结构。注意两条虚线：<b>人工干预是有限的</b>（地面只能下达任务级指令，不能直接操纵），这是 STPA 分析中最重要的结构性特征。</figcaption>
+  </figure>
+
+  <h3>6.1 不安全控制行为（节选 12 条）</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>编号</th><th>控制器</th><th>不安全控制行为</th><th>类型</th><th>可能后果</th></tr></thead>
+      <tbody>
+        <tr><td class="num">UCA-1</td><td>飞控</td><td>在未满足净空条件时下达“起飞”</td><td>提供了不安全的控制</td><td>与障碍物/人员冲突</td></tr>
+        <tr><td class="num">UCA-2</td><td>飞控</td><td>单桨失效后未及时重构推力分配</td><td>提供过晚</td><td>姿态失控</td></tr>
+        <tr><td class="num">UCA-3</td><td>飞控</td><td>在阵风超限时仍执行“继续任务”</td><td>提供了不安全的控制</td><td>偏离航线、迫降</td></tr>
+        <tr><td class="num">UCA-4</td><td>飞控</td><td>GNSS 异常时未切换到惯性/视觉组合</td><td>未提供</td><td>航迹漂移</td></tr>
+        <tr><td class="num">UCA-5</td><td>飞控</td><td>电量低于返航阈值仍继续飞行</td><td>提供了不安全的控制</td><td>迫降</td></tr>
+        <tr><td class="num">UCA-6</td><td>飞控</td><td>应急降落点选择在人员密集区</td><td>提供了不安全的控制</td><td>第三方伤害</td></tr>
+        <tr><td class="num">UCA-7</td><td>地面调度</td><td>未确认起降区清空即放行</td><td>未提供</td><td>地面人员伤亡</td></tr>
+        <tr><td class="num">UCA-8</td><td>地面调度</td><td>同时放行多架导致空域冲突</td><td>提供了不安全的控制</td><td>空中相撞</td></tr>
+        <tr><td class="num">UCA-9</td><td>地面调度</td><td>链路中断后未启动应急预案</td><td>提供过晚</td><td>失去态势感知</td></tr>
+        <tr><td class="num">UCA-10</td><td>乘员</td><td>飞行中解开约束 / 触碰舱内设备</td><td>提供了不安全的控制</td><td>重心偏移 / 设备故障</td></tr>
+        <tr><td class="num">UCA-11</td><td>维护</td><td>复材损伤未检出即放行</td><td>提供了不安全的控制</td><td>结构失效</td></tr>
+        <tr><td class="num">UCA-12</td><td>运营人</td><td>在超气象条件窗口强行运行</td><td>提供了不安全的控制</td><td>多类后果</td></tr>
+      </tbody>
+    </table>
+    <div class="src">UCA 类型按 STPA 四分类：未提供 / 提供了不安全的 / 提供过早或过晚 / 提供时间过长或过短（本文整理）。</div>
+  </div>
+
+  <div class="note brand"><span class="lbl">洞察</span>12 条 UCA 里有 <b>5 条（UCA-7~9、11、12）责任在地面组织而非机载系统</b>。这意味着：即使飞行器本身完全可靠，只要运行程序有缺陷，安全目标仍然达不成。<b>“买了安全的飞机”不等于“运行是安全的”</b>，这是课程反复强调的系统工程视角。</div>
+</section>
+
+<!-- ============ SOTIF ============ -->
+<section id="sotif">
+  <div class="sechead"><div class="secnum">07</div><h2>预期功能安全 SOTIF：没有故障也会出事的地方<span class="en">SOTIF (ISO 21448)</span></h2></div>
+
+  <p>SOTIF 处理“系统没坏，但功能不够好或被误用”的风险。对自主飞行的载人平台，这类风险占比往往高于硬件故障。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>触发条件</th><th>功能不足</th><th>后果</th><th>可用的缓解手段</th></tr></thead>
+      <tbody>
+        <tr><td class="b">城市峡谷多径</td><td>GNSS 定位跳变</td><td>悬停漂移、撞建筑</td><td>视觉/惯导融合、地理围栏、限速</td></tr>
+        <tr><td class="b">强阵风 / 热对流</td><td>姿态控制裕度不足</td><td>偏离航线、迫降</td><td>气象窗口、风速阈值、包线保护</td></tr>
+        <tr><td class="b">低温（&lt;0 ℃）</td><td>可用容量骤降、SOC 误判</td><td>提前耗尽</td><td>容量温度补偿、保守返航阈值</td></tr>
+        <tr><td class="b">起降区人员闯入</td><td>感知盲区（无驾驶员目视）</td><td>地面伤害</td><td>物理隔离、地面清场程序、外部观测员</td></tr>
+        <tr><td class="b">乘客误操作</td><td>舱内设备被触碰</td><td>系统异常</td><td>物理防护、上机前告知、约束检查</td></tr>
+        <tr><td class="b">强光/逆光降落</td><td>视觉/传感器饱和</td><td>降落偏差</td><td>降落引导标记、地面辅助</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note warn"><span class="lbl">课程对应</span>课程把 SOTIF 与功能安全并列为“安全需求”的两大类。对 EH216-S 这类<b>没有飞行员兜底</b>的系统，SOTIF 的重要性被进一步放大：<em>人能补的漏洞，它只能靠设计补</em>。</div>
+</section>
+
+<!-- ============ 信息安全 ============ -->
+<section id="cyber">
+  <div class="sechead"><div class="secnum">08</div><h2>信息安全：攻击面与 TARA<span class="en">Cybersecurity &amp; TARA</span></h2></div>
+
+  <p>官方披露“每架配独立密钥并严加密数据”“通讯系统双重保障”。这解决了“链路加密”问题，但攻击面不止链路。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>攻击面</th><th>攻击方式</th><th>影响</th><th>严重度</th><th>可能的防护</th></tr></thead>
+      <tbody>
+        <tr><td class="b">指挥链路</td><td>中间人 / 重放 / 注入</td><td>伪造任务指令</td><td><span class="sev a">灾难性</span></td><td>双向认证、序列号+时间戳、独立密钥</td></tr>
+        <tr><td class="b">GNSS</td><td>欺骗（spoofing）</td><td>航迹被诱导</td><td><span class="sev a">灾难性</span></td><td>多源融合、异常检测、地理围栏</td></tr>
+        <tr><td class="b">地面调度系统</td><td>账号劫持 / 越权</td><td>批量调度被操纵</td><td><span class="sev a">灾难性</span></td><td>强认证、最小权限、操作审计</td></tr>
+        <tr><td class="b">维护接口</td><td>物理接入刷写固件</td><td>植入恶意逻辑</td><td><span class="sev b">危险</span></td><td>安全启动、签名固件、物理锁</td></tr>
+        <tr><td class="b">OTA 升级</td><td>供应链投毒</td><td>系统性风险</td><td><span class="sev b">危险</span></td><td>代码签名、回滚机制、灰度发布</td></tr>
+        <tr><td class="b">乘客设备</td><td>舱内 Wi-Fi/USB 接入</td><td>横向渗透</td><td><span class="sev c">较大</span></td><td>网络隔离、禁用外设</td></tr>
+      </tbody>
+    </table>
+    <div class="src">TARA（威胁分析与风险评估）表为本文按 ISO 21434 思路整理，非官方评估结果。</div>
+  </div>
+
+  <p>值得注意的一点：<strong>无人驾驶把“人”从攻击链里移除了，但也把“人的判断”这个最后防线移除了</strong>。有人驾驶时，飞行员发现仪表异常可以手动接管；EH216-S 只能依赖系统自身的异常检测。因此信息安全对它不是“加分项”，而是<em>安全基线</em>。</p>
+</section>
+
+<!-- ============ 被动安全 ============ -->
+<section id="passive">
+  <div class="sechead"><div class="secnum">09</div><h2>被动安全：坠撞、起火与乘员保护<span class="en">Passive Safety</span></h2></div>
+
+  <p>被动安全假设“事故已经发生”，目标是降低伤害。EH216-S 的构型决定了它的被动安全有三个天然短板，也有两个天然优势。</p>
+
+  <div class="grid g2">
+    <div class="card"><div class="k">短板 1</div><h4>无弹射、无降落伞（公开资料未见）</h4><p>多旋翼在低空失效时高度不足以开伞；也没有弹射座椅。因此被动安全的重点只能是“吸能与约束”，而非“逃生”。</p></div>
+    <div class="card"><div class="k">短板 2</div><h4>电池包与乘员舱相邻</h4><p>纯电平台的电池体积大，热失控时的火焰与有毒烟气直接威胁 2 名乘员，隔离设计难度高于地面车辆。</p></div>
+    <div class="card"><div class="k">短板 3</div><h4>坠撞姿态不可控</h4><p>多旋翼失效后往往带旋转下落，撞击方向不确定，座椅与约束系统难以针对单一方向优化。</p></div>
+    <div class="card"><div class="k">优势 1</div><h4>速度低、能量小</h4><p>最大设计速度 130 km/h、运行速度更低，动能远小于固定翼；碳纤维机身可设计为吸能结构。</p></div>
+    <div class="card"><div class="k">优势 2</div><h4>滑橇式起落架</h4><p>滑橇在硬着陆时可发生塑性变形吸能，结构简单、无收起机构故障点。</p></div>
+    <div class="card"><div class="k">本文判断</div><h4>被动安全证据最薄弱的一环</h4><p>公开材料中未见坠撞试验（drop test）、座椅动态冲击试验、电池包火烧试验的公开数据。而这三项恰是载人航空器被动安全论证的标准证据。</p></div>
+  </div>
+
+  <div class="note danger"><span class="lbl">缺口</span>课程在“主被动碰撞安全”里强调：<b>纵向、横向、垂向三个方向的碰撞都要考虑</b>。对 eVTOL 而言，垂向坠撞是第一位的，而公开资料对这一项几乎没有披露——这是本文判定“被动安全不可评估”的直接原因。</div>
+</section>
+
+<!-- ============ 运行安全 ============ -->
+<section id="ops">
+  <div class="sechead"><div class="secnum">10</div><h2>运行安全：用程序补系统的不足<span class="en">Operational Safety</span></h2></div>
+
+  <p>TCDS 第一阶段运行限制（目视范围内、视距外增观测员、暂不在水上运行）不是“能力不足的遮掩”，而是航空业标准的<strong>风险递进</strong>做法：先用运行约束把风险压到可接受，再逐步放开。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>运行要素</th><th>风险</th><th>课程/规章中的对应措施</th><th>EH216-S 现状</th></tr></thead>
+      <tbody>
+        <tr><td class="b">空域</td><td>与有人机/无人机冲突</td><td>空域申请、电子围栏、动态调度</td><td>逐点审批，未见公开空域协同方案</td></tr>
+        <tr><td class="b">起降场地</td><td>净空不足、地面人员</td><td>物理隔离、清场程序、风向标</td><td>运营点自建，标准未公开</td></tr>
+        <tr><td class="b">气象窗口</td><td>阵风、降水、低温</td><td>风速/能见度阈值、气象服务</td><td>第一阶段限目视，间接限制气象</td></tr>
+        <tr><td class="b">人员资质</td><td>操作失误</td><td>操作员培训、体检、复训</td><td>OC 取证要求具备，细则未公开</td></tr>
+        <tr><td class="b">应急响应</td><td>迫降后的救援</td><td>应急预案、消防、医疗联动</td><td>运营人自建，未公开演练数据</td></tr>
+        <tr><td class="b">维护体系</td><td>隐性损伤</td><td>定检、无损检测、寿命管理</td><td>未公开复材检测规程</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note"><span class="lbl">判断</span>运行安全是 EH216-S <b>做得最务实</b>的一层：它没有假装自己能应对开放空域，而是老老实实把运行限制写进 TCDS。这种“先承认边界”的做法，在安全工程上比宣传“全自主”更可信。</div>
+</section>
+
+<!-- ============ 需求 ============ -->
+<section id="req">
+  <div class="sechead"><div class="secnum">11</div><h2>安全需求与验证方法<span class="en">Safety Requirements &amp; V&amp;V</span></h2></div>
+
+  <p>每条需求都必须可追溯到危险（H）或 UCA，并绑定验证方法。下表为本文整理的核心需求（节选 18 条中的 12 条）。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>编号</th><th>安全需求</th><th>来源</th><th>验证方法</th><th>公开证据</th></tr></thead>
+      <tbody>
+        <tr><td class="num">SR-01</td><td>任意单点失效不得导致失控</td><td>H1/H3</td><td>FTA + 故障注入试验</td><td><span class="sev c">部分</span></td></tr>
+        <tr><td class="num">SR-02</td><td>飞控须在检测到输出冲突时隔离故障通道</td><td>UCA-2</td><td>HIL 仿真 + 硬件在环</td><td><span class="sev c">部分</span></td></tr>
+        <tr><td class="num">SR-03</td><td>共模失效分析须覆盖电源/时钟/传感器批次</td><td>F-02</td><td>CCA 分析 + 设计审查</td><td><span class="sev b">未公开</span></td></tr>
+        <tr><td class="num">SR-04</td><td>电池热失控须在 5 分钟内不蔓延至乘员舱</td><td>H2</td><td>火烧试验 + 热蔓延仿真</td><td><span class="sev b">未公开</span></td></tr>
+        <tr><td class="num">SR-05</td><td>GNSS 失效后须在 3 秒内切换至组合导航</td><td>UCA-4</td><td>屏蔽试验 + 欺骗注入</td><td><span class="sev b">未公开</span></td></tr>
+        <tr><td class="num">SR-06</td><td>链路中断后须执行预定义应急航迹</td><td>UCA-9</td><td>断链试验</td><td><span class="sev b">未公开</span></td></tr>
+        <tr><td class="num">SR-07</td><td>电量低于返航阈值须强制返航且不可覆盖</td><td>UCA-5</td><td>软件审查 + 场景测试</td><td><span class="sev c">部分</span></td></tr>
+        <tr><td class="num">SR-08</td><td>起降区未清空时不得解锁起飞</td><td>UCA-7</td><td>联锁验证 + 程序审查</td><td><span class="sev b">未公开</span></td></tr>
+        <tr><td class="num">SR-09</td><td>应急降落点选择须排除人员密集区</td><td>UCA-6</td><td>地理围栏规则 + 仿真</td><td><span class="sev b">未公开</span></td></tr>
+        <tr><td class="num">SR-10</td><td>垂向坠撞下乘员伤害指标须满足限定值</td><td>F-07</td><td>落震试验 + 假人</td><td><span class="sev b">未公开</span></td></tr>
+        <tr><td class="num">SR-11</td><td>固件须签名并可回滚</td><td>攻击面 4/5</td><td>安全启动验证 + 渗透测试</td><td><span class="sev b">未公开</span></td></tr>
+        <tr><td class="num">SR-12</td><td>复材结构须有可检出的损伤阈值与检测周期</td><td>UCA-11</td><td>NDI 规程审查</td><td><span class="sev b">未公开</span></td></tr>
+      </tbody>
+    </table>
+    <div class="src">“部分”指有间接证据（如通过 TC 审定本身暗示验证存在），“未公开”指无任何公开材料可查。</div>
+  </div>
+
+  <figure>
+    <div class="chart-t" style="font-size:12px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:14px">SR 公开证据覆盖度（本文评估）</div>
+    <div class="bar-row"><div class="lb">有部分公开证据</div><div class="track"><div class="fill t" style="width:25%"></div></div><div class="v">3 / 12</div></div>
+    <div class="bar-row"><div class="lb">完全未公开</div><div class="track"><div class="fill" style="width:75%"></div></div><div class="v">9 / 12</div></div>
+    <figcaption><b>图 4</b>　12 条核心安全需求中，仅 3 条能从公开材料推断已有验证，其余 9 条无从查证。这不是说它们没做，而是<b>公众与研究者无法审计</b>。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ GSN ============ -->
+<section id="gsn">
+  <div class="sechead"><div class="secnum">12</div><h2>安全论证 GSN：目标、策略与证据<span class="en">Goal Structuring Notation</span></h2></div>
+
+  <p>GSN 把“我认为它安全”变成“我可证明它满足这些目标”，并逐层挂证据。下面是本文为 EH216-S 构造的简化论证结构——<strong>关键看哪些目标下面挂了证据、哪些是空的</strong>。</p>
+
+  <figure>
+    <svg viewBox="0 0 900 430" role="img" aria-label="GSN 安全论证结构">
+      <defs>
+        <marker id="ar5" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#8a8378"/></marker>
+        <style>
+          .goal{fill:#fff;stroke:#b4531f;stroke-width:1.4;rx:7}
+          .strat{fill:#f7f3ec;stroke:#b9b0a0;stroke-width:1.2;rx:7}
+          .sol{fill:#f2f7f4;stroke:#5d9c86;stroke-width:1.2;rx:7}
+          .miss{fill:#fdf3f1;stroke:#c1795a;stroke-width:1.2;stroke-dasharray:5 4;rx:7}
+          .gt{font:11px "PingFang SC",sans-serif;fill:#181a1f;text-anchor:middle}
+          .gs{font:10px "PingFang SC",sans-serif;fill:#6d7484;text-anchor:middle}
+          .ln5{stroke:#8a8378;stroke-width:1.1;fill:none;marker-end:url(#ar5)}
+        </style>
+      </defs>
+
+      <rect class="goal" x="300" y="16" width="300" height="52"/>
+      <text x="450" y="38" class="gt">G1 乘员与第三方在全部运行场景下风险可接受</text>
+      <text x="450" y="54" class="gs">Top Goal</text>
+
+      <rect class="strat" x="300" y="96" width="300" height="44"/>
+      <text x="450" y="116" class="gt">S1 按“设计—分析—验证—运行”四层分解</text>
+      <text x="450" y="131" class="gs">Strategy</text>
+      <path class="ln5" d="M450 68 L450 96"/>
+
+      <rect class="goal" x="24" y="176" width="196" height="56"/>
+      <text x="122" y="198" class="gt">G2 设计消除单点失效</text>
+      <text x="122" y="215" class="gs">冗余 · 隔离 · Fail-Safe</text>
+
+      <rect class="goal" x="240" y="176" width="196" height="56"/>
+      <text x="338" y="198" class="gt">G3 危险已被系统识别</text>
+      <text x="338" y="215" class="gs">FHA · FTA · STPA · TARA</text>
+
+      <rect class="goal" x="456" y="176" width="196" height="56"/>
+      <text x="554" y="198" class="gt">G4 需求已被验证</text>
+      <text x="554" y="215" class="gs">试验 · 仿真 · 审查</text>
+
+      <rect class="goal" x="672" y="176" width="196" height="56"/>
+      <text x="770" y="198" class="gt">G5 运行约束已落实</text>
+      <text x="770" y="215" class="gs">TCDS · OC · 程序</text>
+
+      <path class="ln5" d="M450 140 L450 158 L122 158 L122 176"/>
+      <path class="ln5" d="M450 140 L450 158 L338 158 L338 176"/>
+      <path class="ln5" d="M450 140 L450 158 L554 158 L554 176"/>
+      <path class="ln5" d="M450 140 L450 158 L770 158 L770 176"/>
+
+      <rect class="sol" x="24" y="268" width="196" height="46"/>
+      <text x="122" y="288" class="gt">E1 官网披露的冗余与</text><text x="122" y="303" class="gs">Fail-Safe 设计（A 级）</text>
+
+      <rect class="sol" x="240" y="268" width="196" height="46"/>
+      <text x="338" y="288" class="gt">E2 专用条件 + TC 审定</text><text x="338" y="303" class="gs">（B 级，条款未公开）</text>
+
+      <rect class="miss" x="456" y="268" width="196" height="46"/>
+      <text x="554" y="288" class="gt">E3 验证报告？</text><text x="554" y="303" class="gs">未公开（缺口）</text>
+
+      <rect class="sol" x="672" y="268" width="196" height="46"/>
+      <text x="770" y="288" class="gt">E4 TCDS 运行限制</text><text x="770" y="303" class="gs">（B 级，已公开）</text>
+
+      <path class="ln5" d="M122 232 L122 268"/><path class="ln5" d="M338 232 L338 268"/>
+      <path class="ln5" d="M554 232 L554 268"/><path class="ln5" d="M770 232 L770 268"/>
+
+      <rect class="miss" x="240" y="348" width="420" height="62"/>
+      <text x="450" y="372" class="gt">E5 运行绩效数据（运行小时 / 事故率 / 可用率）</text>
+      <text x="450" y="390" class="gs">未公开 —— 缺此项，G1 无法被完整论证</text>
+    </svg>
+    <figcaption><b>图 5</b>　简化 GSN。绿色为已有证据，虚线红框为缺失证据。<b>结论：G2/G5 有证据支撑，G4 与 G1 因缺少验证报告与运行数据而无法闭合。</b></figcaption>
+  </figure>
+
+  <div class="note brand"><span class="lbl">要点</span>GSN 的价值在于<b>暴露空白</b>：它逼你把“我相信”变成“我有证据”。EH216-S 的论证在“设计”和“运行约束”两支上是闭合的，在“验证证据”和“运行绩效”两支上是断开的。</div>
+</section>
+
+<!-- ============ 缺口 ============ -->
+<section id="gaps">
+  <div class="sechead"><div class="secnum">13</div><h2>缺口与不可判定项<span class="en">Evidence Gaps</span></h2></div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>缺口</th><th>为什么关键</th><th>没有它会导致什么</th></tr></thead>
+      <tbody>
+        <tr><td class="b">运行小时与事故率</td><td>安全绩效的唯一客观度量</td><td>无法把“设计安全”转化为“统计安全”，无法与直升机/通航对比</td></tr>
+        <tr><td class="b">电池热失控抑制试验</td><td>纯电平台最致命的单点</td><td>无法证明蔓延时间与乘员逃生窗口</td></tr>
+        <tr><td class="b">飞控共模失效分析</td><td>冗余设计的有效性前提</td><td>多套飞控可能只是“看起来冗余”</td></tr>
+        <tr><td class="b">坠撞与座椅冲击试验</td><td>被动安全的底线证据</td><td>无法证明“摔下来也不至于死”</td></tr>
+        <tr><td class="b">复材无损检测规程</td><td>隐性损伤是结构失效主因</td><td>无法证明长期使用后的结构完整性</td></tr>
+        <tr><td class="b">运行程序与演练记录</td><td>地面风险的主要防线</td><td>无法证明 UCA-7~9 被有效控制</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note danger"><span class="lbl">诚实</span>这六项里，<b>至少有三项（运行数据、热失控试验、坠撞试验）在成熟的载人航空器取证中属于“必须提交”的材料</b>。它们可能已经提交给局方，但没有向公众披露——这两种情况的含义完全不同：<em>前者是“信息不对称”，后者是“论证缺失”</em>。本文只能指出“公众无法审计”，不能断言“没有做”。</div>
+</section>
+
+<!-- ============ 结论 ============ -->
+<section id="concl">
+  <div class="sechead"><div class="secnum">14</div><h2>结论：分层评估与三条建议<span class="en">Conclusion</span></h2></div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>层次</th><th>评估</th><th>依据</th><th>评级</th></tr></thead>
+      <tbody>
+        <tr><td class="b">设计安全</td><td>多套飞控、双路通信、Fail-Safe 就近降落，思路正确且符合无驾驶员平台的特性</td><td>官方披露（A 级）</td><td><span class="sev c">较好</span></td></tr>
+        <tr><td class="b">分析安全</td><td>专用条件 + TC 审定说明完成了系统级安全分析；但条款与分析结果未公开</td><td>监管文件（B 级）</td><td><span class="sev c">中上</span></td></tr>
+        <tr><td class="b">验证安全</td><td>40 000 余架次试飞证明“能做出来”，但关键验证报告（热失控、坠撞、共模）不可查</td><td>官方数字 + 缺口</td><td><span class="sev b">不可判定</span></td></tr>
+        <tr><td class="b">运行安全</td><td>TCDS 运行限制务实、OC 取证建立了组织能力；缺运行绩效数据</td><td>B 级 + 缺口</td><td><span class="sev b">待数据</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>三条建议（若我是评审方）</h3>
+  <ol>
+    <li><strong>要求公开“安全绩效仪表盘”</strong>：累计小时、架次、事件分级、可用率。这是把“设计安全”变成“可验证安全”的最低成本方式，也是公众信任的基础。</li>
+    <li><strong>把共模失效分析列为独立审查项</strong>：多套飞控的价值完全取决于共模因子 β，若共用电源域或同批器件，冗余只是账面数字。</li>
+    <li><strong>把地面风险纳入适航之外的第二套审查</strong>：UCA-7~9 说明至少三分之一的风险不在机上，需要运营人资质与场地标准共同覆盖。</li>
+  </ol>
+
+  <p class="lead">一句话总结：<strong>EH216-S 的安全设计是“清醒的”，安全证据是“不完整的”。</strong>它没有用宣传掩盖边界——TCDS 的运行限制就是自证；但要让外界相信它在失效时仍然安全，还需要把验证与运行数据放到阳光下。</p>
+
+  <div class="note"><span class="lbl">方法论</span>这次分析最有价值的收获不是结论，而是<b>方法</b>：先分层（车/机/系统/证据），再分类（FuSa/SOTIF/Security/Passive/Ops），最后落到需求与论证。任何飞行汽车产品都能用这套流程审一遍，且能迅速看出“哪里是实、哪里是空”。</div>
+</section>
+
+<!-- ============ 文献 ============ -->
+<section id="refs">
+  <div class="sechead"><div class="secnum">15</div><h2>参考文献<span class="en">References · GB/T 7714—2015</span></h2></div>
+  <ol class="refs">
+    <li>亿航智能. EH216-S 无人驾驶载人航空器产品页[EB/OL]. [2026-11-20]. <a href="https://www.ehang.com/cn/ehang216s/">https://www.ehang.com/cn/ehang216s/</a>.</li>
+    <li>亿航智能. EH216-S 适航取证专题页（审定历程与运行限制）[EB/OL]. [2026-11-20]. <a href="https://www.ehang.com/cn/ehang216s/airworthiness/">https://www.ehang.com/cn/ehang216s/airworthiness/</a>.</li>
+    <li>中国民用航空局. EH216-S 型无人驾驶航空器系统专用条件[S]. 2022.</li>
+    <li>中国民用航空局. 民用无人驾驶航空器运行安全管理规定（CCAR-92 部）[S]. 2024.</li>
+    <li>中国新闻网. 全国首批载人类民用无人驾驶航空器运营合格证颁发[EB/OL]. 2025-03-30[2026-11-20]. <a href="https://www.chinanews.com.cn/cj/2025/03-30/10391660.shtml">https://www.chinanews.com.cn/cj/2025/03-30/10391660.shtml</a>.</li>
+    <li>亿航智能. 亿航智能持续推进 EH216-S 无人驾驶载人航空器系统运行和商业运营[EB/OL]. 2023-10-30[2026-11-20]. <a href="https://www.ehang.com/news/1010.html">https://www.ehang.com/news/1010.html</a>.</li>
+    <li>张玉新. 飞行汽车技术基础：第四章 飞行汽车的现状及展望[Z]. 吉林大学自动驾驶安全联合实验室, 2026.</li>
+    <li>张玉新. 飞行汽车技术基础：第五章 飞行汽车产业分析及支撑技术[Z]. 吉林大学自动驾驶安全联合实验室, 2026.</li>
+    <li>ISO 26262:2018 Road vehicles — Functional safety[S]. Geneva: ISO, 2018.</li>
+    <li>ISO 21448:2022 Road vehicles — Safety of the intended functionality[S]. Geneva: ISO, 2022.</li>
+    <li>ISO 34502:2022 Road vehicles — Test scenarios for automated driving systems — Scenario based safety evaluation framework[S]. Geneva: ISO, 2022.</li>
+    <li>ISO/SAE 21434:2021 Road vehicles — Cybersecurity engineering[S]. Geneva: ISO, 2021.</li>
+    <li>INCOSE. Systems Engineering Handbook: A Guide for System Life Cycle Processes and Activities[M]. 4th ed. Wiley, 2015.</li>
+    <li>PAN G, ALOUINI M-S. Flying Car Transportation System: Advances, Techniques, and Challenges[J]. IEEE Access, 2021, 9: 24586-24603.</li>
+    <li>SCHRAGE D, SIRIROJVISUTH A, WALTERS R. Functional Safety Management Approach for Certification of Evolving eVTOL Air Taxi Concepts[C]//AHS 74th Annual Forum, 2018.</li>
+  </ol>
+  <p style="font-size:12.5px;color:var(--muted);margin-top:16px">说明：本文的 FHA 清单、失效树、STPA 控制结构与 GSN 均为按课程方法所做的<b>教学推演</b>，不代表亿航或民航局的官方安全评估结论。严重度与概率量级采用行业通用值，非 EH216-S 实测数据。</p>
+</section>
+
+</main>
+
+<footer>
+  <div class="in">
+    <div>
+      <div class="who">杜金颖 · 吉林大学</div>
+      <div style="margin-top:6px">《飞行汽车技术基础》课程作业 2 · 全方位安全分析 ｜ 学号 15230902 ｜ 证据截止 2026-11-20</div>
+      <div style="margin-top:8px;color:#8b857a">本页为个人学习用途的安全分析方法练习，不构成对任何产品安全性的官方结论；引用内容版权归原作者所有。</div>
+    </div>
+    <div style="text-align:right;font-family:var(--mono);font-size:11.5px;color:#a9a294">
+      EH216-S<br>SAFETY CASE / 2026
+    </div>
+  </div>
+</footer>
+
+<a class="totop" href="#" aria-label="回到顶部">↑</a>
+
+<script>
+  const bar = document.getElementById('progress');
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  };
+  document.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  (function () {
+    const links = Array.from(document.querySelectorAll('.sidebar a'));
+    if (!links.length) return;
+    const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+    const secs = Array.from(map.keys()).map(id => document.getElementById(id)).filter(Boolean);
+    const setActive = (id) => {
+      links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + id));
+      const a = map.get(id);
+      if (a) {
+        const r = a.getBoundingClientRect(), host = a.parentElement, hr = host.getBoundingClientRect();
+        if (r.top < hr.top + 4 || r.bottom > hr.bottom - 4) a.scrollIntoView({ block: 'nearest' });
+      }
+    };
+    const io = new IntersectionObserver((es) => {
+      const v = es.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+      if (v.length) setActive(v[0].target.id);
+    }, { rootMargin: '-15% 0px -60% 0px', threshold: [0, .15, .4, .75] });
+    secs.forEach(s => io.observe(s));
+  })();
+</script>
+</body>
+</html>
